@@ -1,0 +1,4 @@
+# Run linting before pushing
+
+npm run lint:check
+npm run format:check
