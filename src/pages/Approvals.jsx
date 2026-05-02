@@ -49,7 +49,7 @@ const fmtDate = d =>
         month: "short",
         year: "numeric",
       })
-    : "â€”";
+    : "—";
 
 const fmtDateTime = d =>
   d
@@ -63,7 +63,7 @@ const fmtDateTime = d =>
     : null;
 
 const fmtType = type => {
-  if (!type) return "â€”";
+  if (!type) return "—";
   return type
     .replace(/_/g, " ")
     .toLowerCase()
@@ -768,7 +768,7 @@ export default function Approvals() {
             <Text fontSize="sm" style={{ color: "rgba(226,232,240,0.4)" }}>
               {loading
                 ? "â€¦"
-                : `${approvals.length} total Â· ${counts.PENDING} pending`}
+                : `${approvals.length} total · ${counts.PENDING} pending`}
             </Text>
           </div>
         </Flex>
@@ -908,7 +908,7 @@ export default function Approvals() {
                 letterSpacing: "0.8px",
               }}
             >
-              Request Â· Type Â· Requested By
+              Request · Type · Requested By
             </span>
           </div>
 

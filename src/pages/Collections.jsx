@@ -37,8 +37,8 @@ const isVerified = c => c.verified === true || c.status === "VERIFIED";
 
 const fmt = amount =>
   amount != null
-    ? `â‚¹${Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : "â€”";
+    ? `₹${Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : "—";
 
 const fmtDate = d =>
   d
@@ -47,7 +47,7 @@ const fmtDate = d =>
         month: "short",
         year: "numeric",
       })
-    : "â€”";
+    : "—";
 
 function StatusBadge({ verified }) {
   const s = statusStyle(verified);
@@ -131,7 +131,7 @@ function CollectionRow({ collection, selected, onClick }) {
           }}
         >
           <span style={{ color: "white", fontWeight: 600, fontSize: 14 }}>
-            {collection.customerName ?? "â€”"}
+            {collection.customerName ?? "—"}
           </span>
           <StatusBadge verified={verified} />
         </div>
@@ -140,7 +140,7 @@ function CollectionRow({ collection, selected, onClick }) {
             {fmt(collection.amount)}
           </span>
           <span style={{ fontSize: 12, color: "rgba(226,232,240,0.35)" }}>
-            by {collection.cashierName ?? "â€”"}
+            by {collection.cashierName ?? "—"}
           </span>
         </div>
       </div>
@@ -311,7 +311,7 @@ function DetailPanel({
                 marginBottom: 5,
               }}
             >
-              {collection.customerName ?? "â€”"}
+              {collection.customerName ?? "—"}
             </div>
             <StatusBadge verified={verified} />
           </div>
@@ -605,7 +605,7 @@ export default function Collections() {
             <Text fontSize="sm" style={{ color: "rgba(226,232,240,0.4)" }}>
               {loading
                 ? "â€¦"
-                : `${collections.length} total Â· ${counts.PENDING} pending verification`}
+                : `${collections.length} total · ${counts.PENDING} pending verification`}
             </Text>
           </div>
         </Flex>
@@ -745,7 +745,7 @@ export default function Collections() {
                 letterSpacing: "0.8px",
               }}
             >
-              Collection Â· Customer Â· Cashier
+              Collection · Customer · Cashier
             </span>
           </div>
 

@@ -38,8 +38,8 @@ const FILTERS = ["ALL", "ACTIVE", "CLOSED"];
 
 const fmt = amount =>
   amount != null
-    ? `â‚¹${Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : "â€”";
+    ? `₹${Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : "—";
 
 const fmtDate = d =>
   d
@@ -48,7 +48,7 @@ const fmtDate = d =>
         month: "short",
         year: "numeric",
       })
-    : "â€”";
+    : "—";
 
 function StatusBadge({ status }) {
   const s = STATUS[status] ?? {};
@@ -183,7 +183,7 @@ function LoanRow({ loan, selected, onClick }) {
           }}
         >
           <span style={{ color: "white", fontWeight: 600, fontSize: 14 }}>
-            {loan.customerName ?? "â€”"}
+            {loan.customerName ?? "—"}
           </span>
           <StatusBadge status={loan.status} />
         </div>
@@ -490,7 +490,7 @@ function DetailPanel({
               textAlign: "center",
             }}
           >
-            {fmt(paid)} repaid Â· {pct.toFixed(1)}% complete
+            {fmt(paid)} repaid · {pct.toFixed(1)}% complete
           </div>
         </div>
 
@@ -872,7 +872,7 @@ function CreateLoanModal({ onClose, onCreated }) {
                     value={c.id}
                     style={{ background: "#0d1f35" }}
                   >
-                    {c.name} Â· {c.mobile}
+                    {c.name} · {c.mobile}
                   </option>
                 ))}
               </select>
@@ -882,7 +882,7 @@ function CreateLoanModal({ onClose, onCreated }) {
           {/* Amounts */}
           <Grid templateColumns="1fr 1fr" gap={3} mb={4}>
             <div>
-              <label style={labelStyle}>Principal Amount (â‚¹) *</label>
+              <label style={labelStyle}>Principal Amount (₹) *</label>
               <input
                 type="number"
                 min="0"
@@ -895,7 +895,7 @@ function CreateLoanModal({ onClose, onCreated }) {
               />
             </div>
             <div>
-              <label style={labelStyle}>Loan Amount (â‚¹) *</label>
+              <label style={labelStyle}>Loan Amount (₹) *</label>
               <input
                 type="number"
                 min="0"
@@ -934,7 +934,7 @@ function CreateLoanModal({ onClose, onCreated }) {
 
           {/* Discount */}
           <div style={{ marginBottom: 20 }}>
-            <label style={labelStyle}>Discount (â‚¹)</label>
+            <label style={labelStyle}>Discount (₹)</label>
             <input
               type="number"
               min="0"
@@ -1385,7 +1385,7 @@ export default function Loans() {
                 letterSpacing: "0.8px",
               }}
             >
-              Loan Â· Customer Â· Repayment Progress
+              Loan · Customer · Repayment Progress
             </span>
           </div>
 

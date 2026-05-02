@@ -90,7 +90,7 @@ function CustomerRow({ customer, selected, onClick }) {
         month: "short",
         year: "numeric",
       })
-    : "â€”";
+    : "—";
 
   return (
     <div
@@ -144,11 +144,11 @@ function CustomerRow({ customer, selected, onClick }) {
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ color: "rgba(226,232,240,0.45)", fontSize: 12 }}>
-            {customer.mobile ?? "â€”"}
+            {customer.mobile ?? "—"}
           </span>
           {customer.createdByName && (
             <span style={{ color: "rgba(226,232,240,0.3)", fontSize: 12 }}>
-              Â· by {customer.createdByName}
+              · by {customer.createdByName}
             </span>
           )}
         </div>
