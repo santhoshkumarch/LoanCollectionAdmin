@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { icon: RiBellLine, label: "Notifications", to: "/notifications" },
 ];
 
-function NavItem({ icon: Icon, label, to }) {
+function NavItem({ icon: Icon, label, to, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = location.pathname === to;
@@ -35,7 +35,10 @@ function NavItem({ icon: Icon, label, to }) {
   return (
     <button
       className={`sidebar-nav-item${isActive ? " active" : ""}`}
-      onClick={() => navigate(to)}
+      onClick={() => {
+        navigate(to);
+        onClose?.();
+      }}
     >
       <Icon size={17} />
       {label}
@@ -43,7 +46,7 @@ function NavItem({ icon: Icon, label, to }) {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, isMobile, onClose }) {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
@@ -60,6 +63,8 @@ export default function Sidebar() {
       style={{
         background: "#0d1f35",
         borderRight: "1px solid rgba(212,160,23,0.12)",
+        transform: isMobile && !isOpen ? "translateX(-260px)" : "translateX(0)",
+        transition: "transform 0.25s ease",
       }}
     >
       {/* Brand */}
@@ -128,7 +133,7 @@ export default function Sidebar() {
           Menu
         </Text>
         {NAV_ITEMS.map(item => (
-          <NavItem key={item.to} {...item} />
+          <NavItem key={item.to} {...item} onClose={onClose} />
         ))}
       </Box>
 
@@ -161,6 +166,7 @@ export default function Sidebar() {
           onClick={() => {
             logout();
             navigate("/");
+            onClose?.();
           }}
           style={{ color: "rgba(248,113,113,0.75)" }}
         >

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Flex, Text, Badge } from "@chakra-ui/react";
 import { useAuth } from "../hooks/useAuth";
 import { apiFetch } from "../config/api";
-import { RiTimeLine, RiBellLine } from "react-icons/ri";
+import { RiTimeLine, RiBellLine, RiMenuLine } from "react-icons/ri";
 
 const PAGE_TITLES = {
   "/home": "Dashboard",
@@ -22,7 +22,7 @@ const ROLE_LABELS = {
   ADMIN: { label: "Admin", color: "blue" },
 };
 
-export default function Topbar() {
+export default function Topbar({ onMenuToggle, isMobile }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -53,7 +53,7 @@ export default function Topbar() {
 
   return (
     <Box
-      px={8}
+      px={isMobile ? 4 : 8}
       py={4}
       position="sticky"
       top={0}
@@ -66,24 +66,53 @@ export default function Topbar() {
       }}
     >
       <Flex align="center" justify="space-between">
-        <Box>
-          <Text
-            fontSize="xl"
-            fontWeight="700"
-            color="white"
-            letterSpacing="-0.3px"
-          >
-            {pageTitle}
-          </Text>
-          <Flex align="center" gap={1} mt="1px">
-            <RiTimeLine size={11} color="rgba(212,160,23,0.45)" />
-            <Text fontSize="12px" style={{ color: "rgba(226,232,240,0.35)" }}>
-              {today}
-            </Text>
-          </Flex>
-        </Box>
-
         <Flex align="center" gap={3}>
+          {/* Hamburger — mobile only */}
+          {isMobile && (
+            <button
+              onClick={onMenuToggle}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                flexShrink: 0,
+              }}
+            >
+              <RiMenuLine size={18} color="rgba(226,232,240,0.65)" />
+            </button>
+          )}
+
+          <Box>
+            <Text
+              fontSize="xl"
+              fontWeight="700"
+              color="white"
+              letterSpacing="-0.3px"
+            >
+              {pageTitle}
+            </Text>
+            {!isMobile && (
+              <Flex align="center" gap={1} mt="1px">
+                <RiTimeLine size={11} color="rgba(212,160,23,0.45)" />
+                <Text
+                  fontSize="12px"
+                  style={{ color: "rgba(226,232,240,0.35)" }}
+                >
+                  {today}
+                </Text>
+              </Flex>
+            )}
+          </Box>
+        </Flex>
+
+        <Flex align="center" gap={isMobile ? 2 : 3}>
           {/* Bell with unread badge */}
           <button
             onClick={() => navigate("/notifications")}
@@ -135,11 +164,12 @@ export default function Topbar() {
             )}
           </button>
 
-          {roleInfo && (
+          {!isMobile && roleInfo && (
             <Badge colorPalette={roleInfo.color} variant="subtle" size="sm">
               {roleInfo.label}
             </Badge>
           )}
+
           {user && (
             <Flex align="center" gap={2}>
               <Box
@@ -160,14 +190,15 @@ export default function Topbar() {
               >
                 {user.name?.charAt(0).toUpperCase()}
               </Box>
-              <Text
-                fontSize="sm"
-                fontWeight="500"
-                style={{ color: "rgba(226,232,240,0.65)" }}
-                display={{ base: "none", md: "block" }}
-              >
-                {user.name}
-              </Text>
+              {!isMobile && (
+                <Text
+                  fontSize="sm"
+                  fontWeight="500"
+                  style={{ color: "rgba(226,232,240,0.65)" }}
+                >
+                  {user.name}
+                </Text>
+              )}
             </Flex>
           )}
         </Flex>
