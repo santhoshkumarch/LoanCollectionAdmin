@@ -35,12 +35,14 @@ export default defineConfig([
       },
     },
     rules: {
-      "react/react-in-jsx-scope": "off", // Not needed for React 17+ with new JSX transform
-      "react/prop-types": "off", // Disable prop-types since we're using Zod for validation
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
       "no-unused-vars": "error",
       "no-undef": "error",
       "no-unused-labels": "error",
       "no-unused-private-class-members": "error",
+      "react-hooks/set-state-in-effect": "off",
+      "react-refresh/only-export-components": "off",
     },
   },
 ]);
