@@ -630,7 +630,7 @@ function DetailPanel({
               ) : (
                 <>
                   <RiCheckLine size={15} />
-                  Approve Settlement
+                  Settle Loan
                 </>
               )}
             </button>
@@ -1105,6 +1105,9 @@ export default function Loans() {
       toaster.create({ title: "Loan settled & closed", type: "success" });
     } catch (e) {
       toaster.create({ title: e.message, type: "error" });
+      // Refresh in case loan state changed on the server (deleted or already closed)
+      fetchLoans();
+      setSelected(null);
     } finally {
       setActionLoading(false);
     }

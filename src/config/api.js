@@ -14,7 +14,12 @@ export const apiFetch = async (path, options = {}) => {
       ...options.headers,
     },
   });
-  if (res.status === 401) throw new Error("Unauthorized");
+  if (res.status === 401) {
+    localStorage.removeItem("auth_user");
+    localStorage.removeItem("auth_token");
+    window.location.replace("/login");
+    throw new Error("Session expired");
+  }
   if (res.status === 204) return null;
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

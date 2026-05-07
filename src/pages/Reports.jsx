@@ -9,6 +9,7 @@ import {
   RiArrowDownLine,
   RiUserLine,
   RiExchangeLine,
+  RiGroupLine,
 } from "react-icons/ri";
 import { apiFetch } from "../config/api";
 import { toaster } from "../components/ui/toaster";
@@ -242,10 +243,154 @@ function CashierTable({ rows }) {
   );
 }
 
+function CustomerTable({ rows }) {
+  if (!rows || rows.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px 24px" }}>
+        <RiGroupLine
+          size={36}
+          color="rgba(6,182,212,0.12)"
+          style={{ margin: "0 auto 12px" }}
+        />
+        <div style={{ color: "rgba(226,232,240,0.35)", fontSize: 14 }}>
+          No customer data for this date
+        </div>
+      </div>
+    );
+  }
+
+  const totalInflow = rows.reduce((s, r) => s + Number(r.inflow ?? 0), 0);
+  const totalCollections = rows.reduce(
+    (s, r) => s + Number(r.collectionCount ?? 0),
+    0
+  );
+
+  const colStyle = (align = "left") => ({
+    padding: "11px 16px",
+    fontSize: 13,
+    color: "rgba(226,232,240,0.75)",
+    textAlign: align,
+  });
+
+  const headerStyle = (align = "left") => ({
+    padding: "10px 16px",
+    fontSize: 10,
+    fontWeight: 700,
+    color: "rgba(226,232,240,0.3)",
+    textTransform: "uppercase",
+    letterSpacing: "0.8px",
+    textAlign: align,
+  });
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <th style={headerStyle("left")}>Customer</th>
+            <th style={headerStyle("right")}>Collections</th>
+            <th style={headerStyle("right")}>Total Inflow</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <motion.tr
+              key={row.customerId ?? i}
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              style={{
+                borderBottom: "1px solid rgba(255,255,255,0.04)",
+                background:
+                  i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
+              }}
+            >
+              <td
+                style={{
+                  ...colStyle(),
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(245,158,11,0.1)",
+                    border: "1px solid rgba(245,158,11,0.18)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#f59e0b",
+                    flexShrink: 0,
+                  }}
+                >
+                  {(row.customerName ?? "?").slice(0, 2).toUpperCase()}
+                </div>
+                <span style={{ color: "white", fontWeight: 600 }}>
+                  {row.customerName ?? "—"}
+                </span>
+              </td>
+              <td
+                style={{ ...colStyle("right"), color: ACCENT, fontWeight: 700 }}
+              >
+                {row.collectionCount ?? 0}
+              </td>
+              <td
+                style={{
+                  ...colStyle("right"),
+                  color: "#10b981",
+                  fontWeight: 700,
+                }}
+              >
+                {fmt(row.inflow)}
+              </td>
+            </motion.tr>
+          ))}
+          <tr
+            style={{
+              borderTop: "2px solid rgba(255,255,255,0.08)",
+              background: "rgba(6,182,212,0.04)",
+            }}
+          >
+            <td style={{ ...colStyle(), color: "white", fontWeight: 700 }}>
+              Total
+            </td>
+            <td
+              style={{ ...colStyle("right"), color: ACCENT, fontWeight: 800 }}
+            >
+              {totalCollections}
+            </td>
+            <td
+              style={{
+                ...colStyle("right"),
+                color: "#10b981",
+                fontWeight: 800,
+              }}
+            >
+              {fmt(totalInflow)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const TABS = [
+  { key: "cashier", label: "By Cashier", icon: RiUserLine },
+  { key: "customer", label: "By Customer", icon: RiGroupLine },
+];
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Reports() {
   const [date, setDate] = useState(today());
+  const [activeTab, setActiveTab] = useState("cashier");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -492,7 +637,7 @@ export default function Reports() {
             </motion.div>
           )}
 
-          {/* Per-cashier breakdown */}
+          {/* Tabbed breakdown */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -505,29 +650,54 @@ export default function Reports() {
                 border: "1px solid rgba(255,255,255,0.07)",
               }}
             >
+              {/* Tab header */}
               <div
                 style={{
                   padding: "14px 20px",
                   borderBottom: "1px solid rgba(255,255,255,0.05)",
                   display: "flex",
                   alignItems: "center",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
-                <RiUserLine size={15} color="rgba(6,182,212,0.5)" />
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "rgba(226,232,240,0.3)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.8px",
-                  }}
-                >
-                  Per Cashier Breakdown
-                </span>
+                {TABS.map(tab => {
+                  const active = activeTab === tab.key;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "6px 14px",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        transition: "all 0.15s",
+                        background: active
+                          ? "rgba(6,182,212,0.12)"
+                          : "transparent",
+                        border: `1px solid ${active ? "rgba(6,182,212,0.3)" : "transparent"}`,
+                        color: active ? ACCENT : "rgba(226,232,240,0.35)",
+                      }}
+                    >
+                      <Icon size={13} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
-              <CashierTable rows={report.perCashier} />
+
+              {/* Tab content */}
+              {activeTab === "cashier" ? (
+                <CashierTable rows={report.perCashier} />
+              ) : (
+                <CustomerTable rows={report.perCustomer} />
+              )}
             </Box>
           </motion.div>
         </>

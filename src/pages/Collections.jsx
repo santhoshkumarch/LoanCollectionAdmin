@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Box, Flex, Text, Spinner } from "@chakra-ui/react";
 import {
@@ -7,10 +7,14 @@ import {
   RiCloseLine,
   RiUserLine,
   RiCalendarLine,
-  RiArrowRightLine,
   RiDeleteBinLine,
   RiCheckLine,
   RiFileTextLine,
+  RiWalletLine,
+  RiIdCardLine,
+  RiArrowDownSLine,
+  RiArrowRightSLine,
+  RiShieldCheckLine,
 } from "react-icons/ri";
 import { apiFetch } from "../config/api";
 import { usePermission } from "../hooks/usePermission";
@@ -33,7 +37,8 @@ const statusStyle = verified =>
         label: "Pending",
       };
 
-const isVerified = c => c.verified === true || c.status === "VERIFIED";
+const isVerified = c =>
+  c.verified === true || c.isVerified === true || c.status === "VERIFIED";
 
 const fmt = amount =>
   amount != null
@@ -48,6 +53,43 @@ const fmtDate = d =>
         year: "numeric",
       })
     : "—";
+
+function Checkbox({ checked, indeterminate, onChange }) {
+  return (
+    <div
+      onClick={e => {
+        e.stopPropagation();
+        onChange(!checked);
+      }}
+      style={{
+        width: 18,
+        height: 18,
+        borderRadius: 5,
+        flexShrink: 0,
+        border: `1.5px solid ${checked || indeterminate ? "#f59e0b" : "rgba(255,255,255,0.2)"}`,
+        background:
+          checked || indeterminate ? "rgba(245,158,11,0.15)" : "transparent",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        transition: "all 0.12s",
+      }}
+    >
+      {checked && <RiCheckLine size={11} color="#f59e0b" />}
+      {!checked && indeterminate && (
+        <div
+          style={{
+            width: 8,
+            height: 1.5,
+            background: "#f59e0b",
+            borderRadius: 1,
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 function StatusBadge({ verified }) {
   const s = statusStyle(verified);
@@ -80,87 +122,6 @@ function StatusBadge({ verified }) {
       />
       {s.label}
     </span>
-  );
-}
-
-function CollectionRow({ collection, selected, onClick }) {
-  const isSelected = selected?.id === collection.id;
-  const verified = isVerified(collection);
-  return (
-    <div
-      onClick={() => onClick(collection)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        padding: "13px 16px",
-        cursor: "pointer",
-        borderRadius: 12,
-        background: isSelected ? "rgba(245,158,11,0.07)" : "transparent",
-        border: `1px solid ${isSelected ? "rgba(245,158,11,0.3)" : "transparent"}`,
-        transition: "all 0.15s",
-        marginBottom: 2,
-      }}
-    >
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: verified
-            ? "rgba(16,185,129,0.1)"
-            : "rgba(245,158,11,0.1)",
-          border: `1px solid ${verified ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)"}`,
-        }}
-      >
-        <RiBankCardLine size={20} color={verified ? "#10b981" : "#f59e0b"} />
-      </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 4,
-            flexWrap: "wrap",
-          }}
-        >
-          <span style={{ color: "white", fontWeight: 600, fontSize: 14 }}>
-            {collection.customerName ?? "—"}
-          </span>
-          <StatusBadge verified={verified} />
-        </div>
-        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>
-            {fmt(collection.amount)}
-          </span>
-          <span style={{ fontSize: 12, color: "rgba(226,232,240,0.35)" }}>
-            by {collection.cashierName ?? "—"}
-          </span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          textAlign: "right",
-          flexShrink: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: 6,
-        }}
-      >
-        <span style={{ color: "rgba(226,232,240,0.3)", fontSize: 11 }}>
-          {fmtDate(collection.collectionDate)}
-        </span>
-        <RiArrowRightLine size={13} color="rgba(245,158,11,0.35)" />
-      </div>
-    </div>
   );
 }
 
@@ -242,6 +203,359 @@ function Divider() {
     />
   );
 }
+
+// -- Individual collection row with checkbox --
+
+function CollectionRow({
+  collection,
+  checked,
+  onCheck,
+  onDetailClick,
+  isDetailOpen,
+}) {
+  const verified = isVerified(collection);
+  return (
+    <div
+      onClick={() => onDetailClick(collection)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "11px 12px",
+        cursor: "pointer",
+        borderRadius: 10,
+        background: isDetailOpen ? "rgba(245,158,11,0.07)" : "transparent",
+        border: `1px solid ${isDetailOpen ? "rgba(245,158,11,0.3)" : "transparent"}`,
+        transition: "all 0.15s",
+        marginBottom: 2,
+      }}
+    >
+      <Checkbox checked={checked} onChange={onCheck} />
+
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: verified
+            ? "rgba(16,185,129,0.1)"
+            : "rgba(245,158,11,0.1)",
+          border: `1px solid ${verified ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)"}`,
+        }}
+      >
+        <RiBankCardLine size={17} color={verified ? "#10b981" : "#f59e0b"} />
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 3,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ color: "white", fontWeight: 600, fontSize: 13 }}>
+            {collection.customerName ?? "—"}
+          </span>
+          <StatusBadge verified={verified} />
+        </div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>
+            {fmt(collection.amount)}
+          </span>
+          <span style={{ fontSize: 11, color: "rgba(226,232,240,0.3)" }}>
+            {fmtDate(collection.collectedAt)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -- Cashier accordion group --
+
+function CashierGroup({
+  group,
+  expanded,
+  onToggle,
+  checkedIds,
+  onCheckAll,
+  onCheckOne,
+  onDetailClick,
+  selectedDetail,
+  onVerifyCashier,
+  actionLoading,
+  canVerify,
+}) {
+  const { cashierName, collections } = group;
+  const pendingCollections = collections.filter(c => !isVerified(c));
+  const pendingCount = pendingCollections.length;
+  const totalCount = collections.length;
+
+  const checkedInGroup = collections.filter(c => checkedIds.has(c.id));
+  const allChecked = checkedInGroup.length === totalCount && totalCount > 0;
+  const someChecked = checkedInGroup.length > 0 && !allChecked;
+
+  const totalAmount = collections.reduce(
+    (sum, c) => sum + (Number(c.amount) || 0),
+    0
+  );
+
+  const initials = cashierName
+    ? cashierName
+        .split(" ")
+        .map(w => w[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "?";
+
+  return (
+    <div
+      style={{
+        marginBottom: 8,
+        borderRadius: 14,
+        border: "1px solid rgba(255,255,255,0.07)",
+        background: "#0d1f35",
+        overflow: "hidden",
+      }}
+    >
+      {/* Cashier header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "13px 14px",
+          background: expanded ? "rgba(245,158,11,0.04)" : "transparent",
+          borderBottom: expanded ? "1px solid rgba(255,255,255,0.05)" : "none",
+          transition: "background 0.15s",
+        }}
+      >
+        {/* Select-all checkbox */}
+        <Checkbox
+          checked={allChecked}
+          indeterminate={someChecked}
+          onChange={checked => onCheckAll(collections, checked)}
+        />
+
+        {/* Avatar + name + stats — clicking toggles accordion */}
+        <div
+          onClick={onToggle}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            cursor: "pointer",
+            minWidth: 0,
+          }}
+        >
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background:
+                "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.08))",
+              border: "1px solid rgba(245,158,11,0.25)",
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#f59e0b",
+            }}
+          >
+            {initials}
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: "white", fontWeight: 700, fontSize: 14 }}>
+              {cashierName ?? "Unknown"}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              <span style={{ fontSize: 12, color: "rgba(226,232,240,0.4)" }}>
+                {totalCount} collection{totalCount !== 1 ? "s" : ""}
+              </span>
+              {pendingCount > 0 && (
+                <span
+                  style={{ fontSize: 12, color: "#f59e0b", fontWeight: 600 }}
+                >
+                  {pendingCount} pending
+                </span>
+              )}
+              <span style={{ fontSize: 12, color: "rgba(226,232,240,0.3)" }}>
+                {fmt(totalAmount)}
+              </span>
+            </div>
+          </div>
+
+          {expanded ? (
+            <RiArrowDownSLine size={18} color="rgba(245,158,11,0.5)" />
+          ) : (
+            <RiArrowRightSLine size={18} color="rgba(226,232,240,0.2)" />
+          )}
+        </div>
+
+        {/* Verify all pending for this cashier */}
+        {canVerify && pendingCount > 0 && (
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              onVerifyCashier(pendingCollections.map(c => c.id));
+            }}
+            disabled={actionLoading}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              background: "rgba(16,185,129,0.1)",
+              border: "1px solid rgba(16,185,129,0.25)",
+              color: "#10b981",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+              opacity: actionLoading ? 0.6 : 1,
+            }}
+          >
+            <RiShieldCheckLine size={13} />
+            Verify All ({pendingCount})
+          </button>
+        )}
+      </div>
+
+      {/* Expanded collection rows */}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ padding: "6px 8px" }}>
+              {collections.map(c => (
+                <CollectionRow
+                  key={c.id}
+                  collection={c}
+                  checked={checkedIds.has(c.id)}
+                  onCheck={checked => onCheckOne(c.id, checked)}
+                  onDetailClick={onDetailClick}
+                  isDetailOpen={selectedDetail?.id === c.id}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// -- Floating bulk action bar --
+
+function BulkActionBar({ count, onVerify, onClear, loading }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.2 }}
+      style={{
+        position: "fixed",
+        bottom: 24,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 50,
+        background: "#1a2f4a",
+        border: "1px solid rgba(245,158,11,0.3)",
+        borderRadius: 14,
+        padding: "10px 14px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: "rgba(226,232,240,0.75)",
+        }}
+      >
+        {count} selected
+      </span>
+      <div
+        style={{ width: 1, height: 18, background: "rgba(255,255,255,0.1)" }}
+      />
+      <button
+        onClick={onVerify}
+        disabled={loading}
+        style={{
+          padding: "7px 16px",
+          borderRadius: 8,
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: "pointer",
+          fontFamily: "inherit",
+          background: "linear-gradient(135deg, #10b981, #059669)",
+          border: "none",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+          opacity: loading ? 0.7 : 1,
+        }}
+      >
+        {loading ? <Spinner size="xs" /> : <RiCheckLine size={13} />}
+        Verify Selected
+      </button>
+      <button
+        onClick={onClear}
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 7,
+          cursor: "pointer",
+          border: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.04)",
+          color: "rgba(226,232,240,0.4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "inherit",
+        }}
+      >
+        <RiCloseLine size={14} />
+      </button>
+    </motion.div>
+  );
+}
+
+// -- Detail panel --
 
 function DetailPanel({
   collection,
@@ -338,7 +652,6 @@ function DetailPanel({
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 22px" }}>
-        {/* Amount highlight */}
         <div
           style={{
             padding: "20px 16px",
@@ -379,7 +692,26 @@ function DetailPanel({
         <InfoRow
           icon={RiCalendarLine}
           label="Collection Date"
-          value={fmtDate(collection.collectionDate)}
+          value={fmtDate(collection.collectedAt)}
+        />
+        <InfoRow
+          icon={RiWalletLine}
+          label="Payment Mode"
+          value={
+            collection.collectionMode
+              ? collection.collectionMode.charAt(0) +
+                collection.collectionMode.slice(1).toLowerCase()
+              : null
+          }
+        />
+        <InfoRow
+          icon={RiIdCardLine}
+          label="Loan Reference"
+          value={
+            collection.loanId
+              ? collection.loanId.toString().slice(0, 8).toUpperCase()
+              : null
+          }
         />
         {collection.notes && (
           <InfoRow
@@ -389,103 +721,117 @@ function DetailPanel({
           />
         )}
 
-        <Divider />
-        <SectionLabel>Record Info</SectionLabel>
-        <InfoRow
-          icon={RiCalendarLine}
-          label="Created At"
-          value={
-            collection.createdAt
-              ? new Date(collection.createdAt).toLocaleString("en-IN")
-              : null
-          }
-        />
+        {verified && collection.verifiedByName && (
+          <>
+            <Divider />
+            <SectionLabel>Verification</SectionLabel>
+            <InfoRow
+              icon={RiUserLine}
+              label="Verified By"
+              value={collection.verifiedByName}
+              valueColor="#10b981"
+            />
+          </>
+        )}
       </div>
 
       {/* Footer */}
-      {(!verified || canDelete) && (
-        <div
-          style={{
-            padding: "14px 22px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-            flexShrink: 0,
-          }}
-        >
-          {!verified && (
-            <button
-              onClick={() => onVerify(collection.id)}
-              disabled={actionLoading}
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                background: "linear-gradient(135deg, #10b981, #059669)",
-                border: "none",
-                color: "white",
-                fontSize: 13,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                boxShadow: "0 4px 16px rgba(16,185,129,0.25)",
-                opacity: actionLoading ? 0.7 : 1,
-              }}
-            >
-              {actionLoading ? (
-                <Spinner size="xs" />
-              ) : (
-                <>
-                  <RiCheckLine size={15} />
-                  Verify Collection
-                </>
-              )}
-            </button>
-          )}
-          {canDelete && (
-            <button
-              onClick={() => onDelete(collection.id)}
-              disabled={actionLoading}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                background: "rgba(239,68,68,0.07)",
-                border: "1px solid rgba(239,68,68,0.18)",
-                color: "#fca5a5",
-                fontSize: 13,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                opacity: actionLoading ? 0.7 : 1,
-              }}
-            >
-              {actionLoading ? (
-                <Spinner size="xs" />
-              ) : (
-                <>
-                  <RiDeleteBinLine size={14} />
-                  Delete
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      )}
+      <div
+        style={{
+          padding: "14px 22px",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          flexShrink: 0,
+        }}
+      >
+        {verified && !canDelete ? (
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: 12,
+              color: "rgba(16,185,129,0.6)",
+              padding: "6px 0",
+            }}
+          >
+            This collection has been verified
+          </div>
+        ) : (
+          <>
+            {!verified && (
+              <button
+                onClick={() => onVerify([collection.id])}
+                disabled={actionLoading}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  background: "linear-gradient(135deg, #10b981, #059669)",
+                  border: "none",
+                  color: "white",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  boxShadow: "0 4px 16px rgba(16,185,129,0.25)",
+                  opacity: actionLoading ? 0.7 : 1,
+                }}
+              >
+                {actionLoading ? (
+                  <Spinner size="xs" />
+                ) : (
+                  <>
+                    <RiCheckLine size={15} />
+                    Verify Collection
+                  </>
+                )}
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => onDelete(collection.id)}
+                disabled={actionLoading}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  background: "rgba(239,68,68,0.07)",
+                  border: "1px solid rgba(239,68,68,0.18)",
+                  color: "#fca5a5",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  opacity: actionLoading ? 0.7 : 1,
+                }}
+              >
+                {actionLoading ? (
+                  <Spinner size="xs" />
+                ) : (
+                  <>
+                    <RiDeleteBinLine size={14} />
+                    Delete
+                  </>
+                )}
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </motion.div>
   );
 }
 
-// â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Main Page --
 
 export default function Collections() {
   const { can } = usePermission();
@@ -494,7 +840,9 @@ export default function Collections() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("ALL");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState(null);
+  const [selectedDetail, setSelectedDetail] = useState(null);
+  const [checkedIds, setCheckedIds] = useState(new Set());
+  const [expandedCashiers, setExpandedCashiers] = useState(new Set());
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -503,7 +851,9 @@ export default function Collections() {
     setError(null);
     try {
       const data = await apiFetch("/api/collections");
-      setCollections(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setCollections(list);
+      setExpandedCashiers(new Set(list.map(c => c.cashierName ?? "Unknown")));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -517,20 +867,34 @@ export default function Collections() {
 
   const changeFilter = f => {
     setActiveFilter(f);
-    setSelected(null);
-    setSearch("");
+    setSelectedDetail(null);
+    setCheckedIds(new Set());
   };
 
-  const filtered = collections.filter(c => {
-    const status = isVerified(c) ? "VERIFIED" : "PENDING";
-    const matchesFilter = activeFilter === "ALL" || status === activeFilter;
-    const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      c.customerName?.toLowerCase().includes(q) ||
-      c.cashierName?.toLowerCase().includes(q);
-    return matchesFilter && matchesSearch;
-  });
+  const filtered = useMemo(() => {
+    return collections.filter(c => {
+      const status = isVerified(c) ? "VERIFIED" : "PENDING";
+      const matchesFilter = activeFilter === "ALL" || status === activeFilter;
+      const q = search.toLowerCase();
+      const matchesSearch =
+        !q ||
+        c.customerName?.toLowerCase().includes(q) ||
+        c.cashierName?.toLowerCase().includes(q);
+      return matchesFilter && matchesSearch;
+    });
+  }, [collections, activeFilter, search]);
+
+  const groupedByCashier = useMemo(() => {
+    const groups = {};
+    filtered.forEach(c => {
+      const key = c.cashierName ?? "Unknown";
+      if (!groups[key]) groups[key] = { cashierName: key, collections: [] };
+      groups[key].collections.push(c);
+    });
+    return Object.values(groups).sort((a, b) =>
+      a.cashierName.localeCompare(b.cashierName)
+    );
+  }, [filtered]);
 
   const counts = {
     ALL: collections.length,
@@ -538,15 +902,36 @@ export default function Collections() {
     VERIFIED: collections.filter(c => isVerified(c)).length,
   };
 
-  const handleVerify = async id => {
+  const handleVerify = async ids => {
     setActionLoading(true);
     try {
-      const updated = await apiFetch(`/api/collections/${id}/verify`, {
-        method: "PUT",
+      let updatedList;
+      if (ids.length === 1) {
+        const updated = await apiFetch(`/api/collections/${ids[0]}/verify`, {
+          method: "PUT",
+        });
+        updatedList = [updated];
+      } else {
+        updatedList = await apiFetch("/api/collections/verify-bulk", {
+          method: "POST",
+          body: JSON.stringify({ ids }),
+        });
+      }
+      const updatedMap = new Map(updatedList.map(u => [u.id, u]));
+      setCollections(prev =>
+        prev.map(c => (updatedMap.has(c.id) ? updatedMap.get(c.id) : c))
+      );
+      if (selectedDetail && updatedMap.has(selectedDetail.id)) {
+        setSelectedDetail(updatedMap.get(selectedDetail.id));
+      }
+      setCheckedIds(new Set());
+      toaster.create({
+        title:
+          ids.length === 1
+            ? "Collection verified"
+            : `${ids.length} collections verified`,
+        type: "success",
       });
-      setCollections(prev => prev.map(c => (c.id === id ? updated : c)));
-      setSelected(updated);
-      toaster.create({ title: "Collection verified", type: "success" });
     } catch (e) {
       toaster.create({ title: e.message, type: "error" });
     } finally {
@@ -559,13 +944,47 @@ export default function Collections() {
     try {
       await apiFetch(`/api/collections/${id}`, { method: "DELETE" });
       setCollections(prev => prev.filter(c => c.id !== id));
-      setSelected(null);
+      setSelectedDetail(null);
+      setCheckedIds(prev => {
+        const n = new Set(prev);
+        n.delete(id);
+        return n;
+      });
       toaster.create({ title: "Collection deleted", type: "info" });
     } catch (e) {
       toaster.create({ title: e.message, type: "error" });
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const toggleCashier = name => {
+    setExpandedCashiers(prev => {
+      const n = new Set(prev);
+      if (n.has(name)) n.delete(name);
+      else n.add(name);
+      return n;
+    });
+  };
+
+  const handleCheckOne = (id, checked) => {
+    setCheckedIds(prev => {
+      const n = new Set(prev);
+      if (checked) n.add(id);
+      else n.delete(id);
+      return n;
+    });
+  };
+
+  const handleCheckAll = (groupCollections, checked) => {
+    setCheckedIds(prev => {
+      const n = new Set(prev);
+      groupCollections.forEach(c => {
+        if (checked) n.add(c.id);
+        else n.delete(c.id);
+      });
+      return n;
+    });
   };
 
   return (
@@ -604,7 +1023,7 @@ export default function Collections() {
             </Text>
             <Text fontSize="sm" style={{ color: "rgba(226,232,240,0.4)" }}>
               {loading
-                ? "â€¦"
+                ? "…"
                 : `${collections.length} total · ${counts.PENDING} pending verification`}
             </Text>
           </div>
@@ -682,7 +1101,7 @@ export default function Collections() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search customer or cashierâ€¦"
+              placeholder="Search customer or cashier…"
               style={{
                 padding: "8px 14px 8px 34px",
                 borderRadius: 10,
@@ -715,86 +1134,80 @@ export default function Collections() {
         </Box>
       )}
 
-      {/* List */}
+      {/* Grouped list */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
+        style={{
+          marginRight: selectedDetail ? 430 : 0,
+          transition: "margin-right 0.3s ease",
+        }}
       >
-        <Box
-          borderRadius="20px"
-          style={{
-            background: "#112240",
-            border: "1px solid rgba(255,255,255,0.07)",
-            marginRight: selected ? 430 : 0,
-            transition: "margin-right 0.3s ease",
-          }}
-        >
-          <div
-            style={{
-              padding: "12px 16px",
-              borderBottom: "1px solid rgba(255,255,255,0.05)",
-            }}
-          >
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "rgba(226,232,240,0.3)",
-                textTransform: "uppercase",
-                letterSpacing: "0.8px",
-              }}
-            >
-              Collection · Customer · Cashier
-            </span>
+        {loading ? (
+          <Flex justify="center" align="center" py={16}>
+            <Spinner style={{ color: "rgba(245,158,11,0.6)" }} />
+          </Flex>
+        ) : groupedByCashier.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "56px 24px" }}>
+            <RiBankCardLine
+              size={44}
+              color="rgba(245,158,11,0.12)"
+              style={{ margin: "0 auto 14px" }}
+            />
+            <div style={{ color: "rgba(226,232,240,0.35)", fontSize: 14 }}>
+              {search
+                ? "No collections match your search"
+                : "No collections found"}
+            </div>
           </div>
-
-          {loading ? (
-            <Flex justify="center" align="center" py={16}>
-              <Spinner style={{ color: "rgba(245,158,11,0.6)" }} />
-            </Flex>
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "56px 24px" }}>
-              <RiBankCardLine
-                size={44}
-                color="rgba(245,158,11,0.12)"
-                style={{ margin: "0 auto 14px" }}
+        ) : (
+          groupedByCashier.map((group, i) => (
+            <motion.div
+              key={group.cashierName}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.3 }}
+            >
+              <CashierGroup
+                group={group}
+                expanded={expandedCashiers.has(group.cashierName)}
+                onToggle={() => toggleCashier(group.cashierName)}
+                checkedIds={checkedIds}
+                onCheckAll={handleCheckAll}
+                onCheckOne={handleCheckOne}
+                onDetailClick={col =>
+                  setSelectedDetail(prev => (prev?.id === col.id ? null : col))
+                }
+                selectedDetail={selectedDetail}
+                onVerifyCashier={ids => handleVerify(ids)}
+                actionLoading={actionLoading}
+                canVerify={can("collections:verify")}
               />
-              <div style={{ color: "rgba(226,232,240,0.35)", fontSize: 14 }}>
-                {search
-                  ? "No collections match your search"
-                  : "No collections found"}
-              </div>
-            </div>
-          ) : (
-            <div style={{ padding: "6px 6px" }}>
-              {filtered.map((c, i) => (
-                <motion.div
-                  key={c.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03, duration: 0.3 }}
-                >
-                  <CollectionRow
-                    collection={c}
-                    selected={selected}
-                    onClick={col =>
-                      setSelected(prev => (prev?.id === col.id ? null : col))
-                    }
-                  />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </Box>
+            </motion.div>
+          ))
+        )}
       </motion.div>
 
+      {/* Floating bulk action bar */}
       <AnimatePresence>
-        {selected && (
+        {checkedIds.size > 0 && (
+          <BulkActionBar
+            count={checkedIds.size}
+            onVerify={() => handleVerify([...checkedIds])}
+            onClear={() => setCheckedIds(new Set())}
+            loading={actionLoading}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Detail panel */}
+      <AnimatePresence>
+        {selectedDetail && (
           <DetailPanel
-            key={selected.id}
-            collection={selected}
-            onClose={() => setSelected(null)}
+            key={selectedDetail.id}
+            collection={selectedDetail}
+            onClose={() => setSelectedDetail(null)}
             onVerify={handleVerify}
             onDelete={handleDelete}
             actionLoading={actionLoading}
