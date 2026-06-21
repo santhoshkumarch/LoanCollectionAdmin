@@ -59,14 +59,39 @@ function FormField({ label, icon: Icon, error, children }) {
   );
 }
 
-function CreateShopModal({ onClose, onCreate }) {
-  const [form, setForm] = useState({ name: "", address: "" });
+const selectStyle = {
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: 10,
+  fontSize: 13,
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(212,160,23,0.2)",
+  color: "#e2e8f0",
+  outline: "none",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+  cursor: "pointer",
+};
+
+function CreateShopModal({ onClose, onCreate, role }) {
+  const [form, setForm] = useState({ name: "", address: "", managerId: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [managers, setManagers] = useState([]);
+
+  const isAdmin = role === "SUPER_ADMIN" || role === "ADMIN";
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    apiFetch("/api/users/role/MANAGER")
+      .then(data => setManagers(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [isAdmin]);
 
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = "Shop name is required";
+    if (isAdmin && !form.managerId) e.managerId = "Manager is required";
     return e;
   };
 
@@ -82,6 +107,7 @@ function CreateShopModal({ onClose, onCreate }) {
       await onCreate({
         name: form.name.trim(),
         address: form.address.trim() || undefined,
+        ...(isAdmin && { managerId: form.managerId }),
       });
     } finally {
       setLoading(false);
@@ -148,7 +174,9 @@ function CreateShopModal({ onClose, onCreate }) {
                 Add Shop
               </div>
               <div style={{ color: "rgba(226,232,240,0.35)", fontSize: 12 }}>
-                Create a new shop under your account
+                {isAdmin
+                  ? "Create a new shop and assign a manager"
+                  : "Create a new shop under your account"}
               </div>
             </div>
           </div>
@@ -172,6 +200,34 @@ function CreateShopModal({ onClose, onCreate }) {
         </div>
 
         <form onSubmit={handleSubmit} style={{ padding: "20px 24px 24px" }}>
+          {isAdmin && (
+            <FormField
+              label="Manager"
+              icon={RiUserStarLine}
+              error={errors.managerId}
+            >
+              <select
+                style={selectStyle}
+                value={form.managerId}
+                onChange={e =>
+                  setForm(p => ({ ...p, managerId: e.target.value }))
+                }
+              >
+                <option value="" style={{ background: "#0d1f35" }}>
+                  Select a manager…
+                </option>
+                {managers.map(m => (
+                  <option
+                    key={m.id}
+                    value={m.id}
+                    style={{ background: "#0d1f35" }}
+                  >
+                    {m.name} ({m.mobile})
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          )}
           <FormField label="Shop Name" icon={RiStoreLine} error={errors.name}>
             <input
               style={inputStyle}
@@ -619,7 +675,7 @@ function DetailPanel({ shop, onClose, onDelete, actionLoading, canDelete }) {
 }
 
 export default function Shops() {
-  const { can } = usePermission();
+  const { can, role } = usePermission();
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -902,6 +958,7 @@ export default function Shops() {
           <CreateShopModal
             onClose={() => setShowCreate(false)}
             onCreate={handleCreate}
+            role={role}
           />
         )}
       </AnimatePresence>
