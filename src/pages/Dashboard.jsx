@@ -20,7 +20,8 @@ import { apiFetch } from "../config/api";
 const STATS_CONFIG = [
   {
     key: "totalInflow",
-    label: "Today's Collections",
+    label: "வரவு — Varavu",
+    sublabel: "Today's collections",
     icon: RiArrowUpLine,
     gradient: "linear-gradient(135deg, #10b981, #059669)",
     glow: "rgba(16,185,129,0.15)",
@@ -30,7 +31,8 @@ const STATS_CONFIG = [
   },
   {
     key: "totalOutflow",
-    label: "Today's Outflow",
+    label: "பற்று — Pattru",
+    sublabel: "Today's disbursals",
     icon: RiArrowDownLine,
     gradient: "linear-gradient(135deg, #f59e0b, #d97706)",
     glow: "rgba(245,158,11,0.15)",
@@ -40,7 +42,8 @@ const STATS_CONFIG = [
   },
   {
     key: "net",
-    label: "Net Balance",
+    label: "இருப்பு — Iruppu",
+    sublabel: "Net balance (Varavu − Pattru)",
     icon: RiSafeLine,
     gradient: "linear-gradient(135deg, #d4a017, #92700f)",
     glow: "rgba(212,160,23,0.18)",
@@ -50,7 +53,8 @@ const STATS_CONFIG = [
   },
   {
     key: "unread",
-    label: "Unread Notifications",
+    label: "Notifications",
+    sublabel: "Unread alerts",
     icon: RiBellLine,
     gradient: "linear-gradient(135deg, #ef4444, #dc2626)",
     glow: "rgba(239,68,68,0.15)",
@@ -87,6 +91,7 @@ const QUICK_LINKS = [
 function StatCard({ config, value, loading, index }) {
   const {
     label,
+    sublabel,
     icon: Icon,
     gradient,
     glow,
@@ -167,11 +172,21 @@ function StatCard({ config, value, loading, index }) {
 
           <Text
             fontSize="sm"
+            fontWeight="700"
             mt={1}
-            style={{ color: "rgba(226,232,240,0.45)" }}
+            style={{ color: "rgba(226,232,240,0.75)" }}
           >
             {label}
           </Text>
+          {sublabel && (
+            <Text
+              fontSize="xs"
+              mt="2px"
+              style={{ color: "rgba(226,232,240,0.35)" }}
+            >
+              {sublabel}
+            </Text>
+          )}
         </Box>
       </Box>
     </motion.div>

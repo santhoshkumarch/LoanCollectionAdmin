@@ -14,6 +14,7 @@ import {
   RiTimeLine,
   RiPercentLine,
   RiArrowDownLine,
+  RiArrowUpLine,
   RiRepeatLine,
   RiUserStarLine,
 } from "react-icons/ri";
@@ -211,25 +212,22 @@ function LoanRow({ loan, selected, onClick }) {
           }}
         >
           <span style={{ fontSize: 12, color: "rgba(226,232,240,0.45)" }}>
-            Loan:{" "}
+            அடப்பு{" "}
             <span style={{ color: "rgba(226,232,240,0.75)", fontWeight: 600 }}>
-              {fmt(loan.loanAmount)}
+              {fmt(loan.principalAmount)}
+            </span>
+            {" + "}
+            <span style={{ color: "#f59e0b", fontWeight: 600 }}>
+              ஆதாயம் {fmt(loan.aadhayamAmount)}
             </span>
           </span>
-          {loan.dailyInstallmentAmount != null ? (
+          {loan.dailyInstallmentAmount != null && (
             <span style={{ fontSize: 12, color: "#10b981", fontWeight: 600 }}>
               {fmt(loan.dailyInstallmentAmount)}/
               {loan.collectionFrequency === "WEEKLY" ? "wk" : "day"}
               {loan.totalInstallmentDays
                 ? ` · ${loan.totalInstallmentDays} days`
                 : ""}
-            </span>
-          ) : (
-            <span style={{ fontSize: 12, color: "rgba(226,232,240,0.45)" }}>
-              Principal:{" "}
-              <span style={{ color: "rgba(226,232,240,0.65)" }}>
-                {fmt(loan.principalAmount)}
-              </span>
             </span>
           )}
           {loan.collectionFrequency === "WEEKLY" && (
@@ -498,7 +496,7 @@ function DetailPanel({
                   marginBottom: 3,
                 }}
               >
-                Loan Amount
+                மொத்தம் — Mottham
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "white" }}>
                 {fmt(loan.loanAmount)}
@@ -512,7 +510,7 @@ function DetailPanel({
                   marginBottom: 3,
                 }}
               >
-                Outstanding
+                நிலுவை — Nilaivai
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#10b981" }}>
                 {fmt(loan.outstandingAmount)}
@@ -607,22 +605,36 @@ function DetailPanel({
           </div>
         </div>
 
-        <SectionLabel>Loan Details</SectionLabel>
+        <SectionLabel>தண்டல் விவரம் — Loan Details</SectionLabel>
         <InfoRow icon={RiUserLine} label="Customer" value={loan.customerName} />
         <InfoRow
           icon={RiArrowDownLine}
-          label="Principal Amount"
+          label="அடப்பு — Adappu"
           value={fmt(loan.principalAmount)}
         />
         <InfoRow
+          icon={RiArrowUpLine}
+          label="ஆதாயம் — Aadhayam"
+          value={fmt(loan.aadhayamAmount)}
+          valueColor="#f59e0b"
+        />
+        <InfoRow
           icon={RiMoneyDollarBoxLine}
-          label="Loan Amount"
+          label="மொத்தம் — Mottham"
           value={fmt(loan.loanAmount)}
         />
+        {Number(loan.magimai) > 0 && (
+          <InfoRow
+            icon={RiPercentLine}
+            label="மகிமை — Magimai"
+            value={fmt(loan.magimai)}
+            valueColor="#a78bfa"
+          />
+        )}
         {Number(loan.discount) > 0 && (
           <InfoRow
             icon={RiPercentLine}
-            label="Discount"
+            label="தள்ளுபடி — Thallubadi"
             value={fmt(loan.discount)}
             valueColor="#f59e0b"
           />
@@ -859,16 +871,16 @@ function DetailPanel({
 
 const EMPTY_FORM = {
   customerId: "",
-  principalAmount: "",
+  principalAmount: "", // Adappu
+  aadhayamAmount: "", // Aadhayam
   dailyInstallmentAmount: "",
   totalInstallmentDays: "",
-  loanAmount: "",
   collectionStartDate: "",
   disbursalDate: "",
   tentativeSettlementDate: "",
-  discount: "",
+  thallubadi: "", // Thallubadi (discount)
   collectionFrequency: "DAILY",
-  processingFee: "",
+  magimai: "", // Magimai
   assignedCashierId: "",
 };
 
@@ -890,55 +902,33 @@ function CreateLoanModal({ onClose, onCreated }) {
       .catch(() => setCashiers([]));
   }, []);
 
-  const set = (field, value) =>
-    setForm(prev => {
-      const next = { ...prev, [field]: value };
-      if (
-        field === "dailyInstallmentAmount" ||
-        field === "totalInstallmentDays"
-      ) {
-        const daily = Number(
-          field === "dailyInstallmentAmount"
-            ? value
-            : prev.dailyInstallmentAmount
-        );
-        const days = Number(
-          field === "totalInstallmentDays" ? value : prev.totalInstallmentDays
-        );
-        if (daily > 0 && days > 0) next.loanAmount = String(daily * days);
-      }
-      return next;
-    });
+  const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
-  const computedRepayTotal =
-    form.dailyInstallmentAmount && form.totalInstallmentDays
-      ? Number(form.dailyInstallmentAmount) * Number(form.totalInstallmentDays)
-      : null;
-  const computedInterest =
-    computedRepayTotal && form.principalAmount
-      ? computedRepayTotal - Number(form.principalAmount)
-      : null;
+  const computedTotal =
+    form.principalAmount && form.aadhayamAmount
+      ? Number(form.principalAmount) + Number(form.aadhayamAmount)
+      : form.principalAmount
+        ? Number(form.principalAmount)
+        : null;
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (
-      !form.customerId ||
-      !form.principalAmount ||
-      !form.loanAmount ||
-      !form.disbursalDate
-    ) {
+    if (!form.customerId || !form.principalAmount || !form.disbursalDate) {
       setError(
-        "Customer, principal amount, loan amount, and disbursal date are required."
+        "Customer, Adappu (principal), and disbursal date are required."
       );
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
+      const adappu = Number(form.principalAmount);
+      const aadhayam = form.aadhayamAmount ? Number(form.aadhayamAmount) : 0;
       const payload = {
         customerId: form.customerId,
-        principalAmount: Number(form.principalAmount),
-        loanAmount: Number(form.loanAmount),
+        principalAmount: adappu,
+        aadhayamAmount: aadhayam,
+        loanAmount: adappu + aadhayam,
         ...(form.dailyInstallmentAmount && {
           dailyInstallmentAmount: Number(form.dailyInstallmentAmount),
         }),
@@ -952,11 +942,9 @@ function CreateLoanModal({ onClose, onCreated }) {
         ...(form.tentativeSettlementDate && {
           tentativeSettlementDate: form.tentativeSettlementDate,
         }),
-        ...(form.discount && { discount: Number(form.discount) }),
+        ...(form.thallubadi && { discount: Number(form.thallubadi) }),
         collectionFrequency: form.collectionFrequency || "DAILY",
-        ...(form.processingFee && {
-          processingFee: Number(form.processingFee),
-        }),
+        ...(form.magimai && { magimai: Number(form.magimai) }),
         ...(form.assignedCashierId && {
           assignedCashierId: form.assignedCashierId,
         }),
@@ -1114,35 +1102,58 @@ function CreateLoanModal({ onClose, onCreated }) {
             )}
           </div>
 
-          {/* Amounts */}
+          {/* Adappu + Aadhayam */}
           <Grid templateColumns="1fr 1fr" gap={3} mb={3}>
             <div>
-              <label style={labelStyle}>Principal Amount (₹) *</label>
+              <label style={labelStyle}>அடப்பு — Adappu (₹) *</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.principalAmount}
                 onChange={e => set("principalAmount", e.target.value)}
-                placeholder="0.00"
+                placeholder="Principal disbursed"
                 style={inputStyle}
                 required
               />
             </div>
             <div>
-              <label style={labelStyle}>Loan Amount (₹) *</label>
+              <label style={labelStyle}>ஆதாயம் — Aadhayam (₹)</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={form.loanAmount}
-                onChange={e => set("loanAmount", e.target.value)}
-                placeholder="Auto-filled from below"
+                value={form.aadhayamAmount}
+                onChange={e => set("aadhayamAmount", e.target.value)}
+                placeholder="Interest / profit"
                 style={inputStyle}
-                required
               />
             </div>
           </Grid>
+
+          {/* Computed Mottham row */}
+          {computedTotal != null && (
+            <div
+              style={{
+                marginBottom: 14,
+                padding: "10px 14px",
+                borderRadius: 10,
+                fontSize: 13,
+                background: "rgba(16,185,129,0.07)",
+                border: "1px solid rgba(16,185,129,0.2)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ color: "rgba(226,232,240,0.6)", fontSize: 12 }}>
+                மொத்தம் — Mottham (Adappu + Aadhayam)
+              </span>
+              <strong style={{ color: "#10b981", fontSize: 16 }}>
+                {fmt(computedTotal)}
+              </strong>
+            </div>
+          )}
 
           {/* Daily Finance */}
           <Grid templateColumns="1fr 1fr" gap={3} mb={3}>
@@ -1206,16 +1217,16 @@ function CreateLoanModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          {/* Processing Fee + Assigned Cashier */}
+          {/* Magimai + Assigned Cashier */}
           <Grid templateColumns="1fr 1fr" gap={3} mb={3}>
             <div>
-              <label style={labelStyle}>Processing Fee (₹)</label>
+              <label style={labelStyle}>மகிமை — Magimai (₹)</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={form.processingFee}
-                onChange={e => set("processingFee", e.target.value)}
+                value={form.magimai}
+                onChange={e => set("magimai", e.target.value)}
                 placeholder="0.00 (optional)"
                 style={inputStyle}
               />
@@ -1242,46 +1253,6 @@ function CreateLoanModal({ onClose, onCreated }) {
               </select>
             </div>
           </Grid>
-
-          {computedRepayTotal != null && (
-            <div
-              style={{
-                marginBottom: 12,
-                padding: "8px 12px",
-                borderRadius: 8,
-                fontSize: 12,
-                background: "rgba(16,185,129,0.07)",
-                border: "1px solid rgba(16,185,129,0.18)",
-                color: "rgba(226,232,240,0.65)",
-                display: "flex",
-                gap: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              <span>
-                Total repay:{" "}
-                <strong style={{ color: "#10b981" }}>
-                  {fmt(computedRepayTotal)}
-                </strong>
-              </span>
-              {computedInterest != null && computedInterest > 0 && (
-                <span>
-                  · Interest:{" "}
-                  <strong style={{ color: "#f59e0b" }}>
-                    {fmt(computedInterest)}
-                  </strong>
-                </span>
-              )}
-              {form.processingFee && Number(form.processingFee) > 0 && (
-                <span>
-                  · Fee:{" "}
-                  <strong style={{ color: "#a78bfa" }}>
-                    {fmt(Number(form.processingFee))}
-                  </strong>
-                </span>
-              )}
-            </div>
-          )}
 
           {/* Dates */}
           <Grid templateColumns="1fr 1fr" gap={3} mb={3}>
@@ -1316,13 +1287,13 @@ function CreateLoanModal({ onClose, onCreated }) {
               />
             </div>
             <div>
-              <label style={labelStyle}>Discount (₹)</label>
+              <label style={labelStyle}>தள்ளுபடி — Thallubadi (₹)</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={form.discount}
-                onChange={e => set("discount", e.target.value)}
+                value={form.thallubadi}
+                onChange={e => set("thallubadi", e.target.value)}
                 placeholder="0.00 (optional)"
                 style={inputStyle}
               />
@@ -1603,12 +1574,12 @@ export default function Loans() {
           >
             {[
               {
-                label: "Total Active Disbursed",
+                label: "மொத்த அடப்பு — Total Adappu",
                 value: fmt(totalDisbursed),
                 color: "#10b981",
               },
               {
-                label: "Total Outstanding",
+                label: "நிலுவை — Nilaivai",
                 value: fmt(totalOutstanding),
                 color: "#f59e0b",
               },

@@ -870,7 +870,9 @@ function CreateCashierModal({ onClose, onCreate }) {
               marginBottom: 20,
             }}
           >
-            New cashiers require Super Admin approval before they can log in.
+            Cashier must be approved by Super Admin before they can log in. If
+            no password is set, the mobile number is used as the default
+            password.
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
@@ -1020,6 +1022,7 @@ export default function Cashiers() {
           userMobile: payload.mobile,
           userEmail: payload.email || undefined,
           shopName: payload.shopName || undefined,
+          password: payload.password || undefined,
         }),
       });
       toaster.create({
