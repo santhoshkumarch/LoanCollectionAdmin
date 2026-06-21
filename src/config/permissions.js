@@ -2,6 +2,14 @@ export const ROLE_PERMISSIONS = {
   SUPER_ADMIN: new Set(["*"]),
 
   ADMIN: new Set([
+    "managers:view",
+    "managers:create",
+    "managers:delete",
+
+    "shops:view",
+    "shops:create",
+    "shops:delete",
+
     "customers:view",
     "customers:create",
     "customers:update",
@@ -34,6 +42,23 @@ export const ROLE_PERMISSIONS = {
     "approvals:approve",
     "approvals:reject",
 
+    "reports:view",
+    "notifications:view",
+  ]),
+
+  MANAGER: new Set([
+    "shops:view",
+    "shops:create",
+    "shops:delete",
+
+    "cashiers:view",
+    "cashiers:create",
+    "cashiers:update",
+    "cashiers:delete",
+
+    "customers:view",
+    "loans:view",
+    "collections:view",
     "reports:view",
     "notifications:view",
   ]),

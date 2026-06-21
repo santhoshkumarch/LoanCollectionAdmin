@@ -16,6 +16,8 @@ import Reports from "./pages/Reports";
 import CashBox from "./pages/CashBox";
 import Notifications from "./pages/Notifications";
 import CollectionSheet from "./pages/CollectionSheet";
+import Managers from "./pages/Managers";
+import Shops from "./pages/Shops";
 
 const guarded = element => (
   <ProtectedRoute>
@@ -45,6 +47,8 @@ export default function App() {
               path="/collection-sheet"
               element={guarded(<CollectionSheet />)}
             />
+            <Route path="/managers" element={guarded(<Managers />)} />
+            <Route path="/shops" element={guarded(<Shops />)} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>

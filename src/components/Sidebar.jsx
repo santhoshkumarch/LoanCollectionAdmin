@@ -14,19 +14,83 @@ import {
   RiLogoutBoxLine,
   RiBankLine,
   RiFileListLine,
+  RiBriefcaseLine,
+  RiStoreLine,
 } from "react-icons/ri";
 
-const NAV_ITEMS = [
-  { icon: RiDashboard3Line, label: "Dashboard", to: "/home" },
-  { icon: RiGroupLine, label: "Customers", to: "/customers" },
-  { icon: RiUserLine, label: "Cashiers", to: "/cashiers" },
-  { icon: RiMoneyDollarBoxLine, label: "Loans", to: "/loans" },
-  { icon: RiHandCoinLine, label: "Collections", to: "/collections" },
-  { icon: RiFileListLine, label: "Today's Sheet", to: "/collection-sheet" },
-  { icon: RiSafeLine, label: "Cash Box", to: "/cash-box" },
-  { icon: RiCheckboxCircleLine, label: "Approvals", to: "/approvals" },
-  { icon: RiBarChart2Line, label: "Reports", to: "/reports" },
-  { icon: RiBellLine, label: "Notifications", to: "/notifications" },
+const ALL_NAV_ITEMS = [
+  {
+    icon: RiDashboard3Line,
+    label: "Dashboard",
+    to: "/home",
+    roles: ["SUPER_ADMIN", "ADMIN", "MANAGER"],
+  },
+  {
+    icon: RiBriefcaseLine,
+    label: "Managers",
+    to: "/managers",
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    icon: RiStoreLine,
+    label: "Shops",
+    to: "/shops",
+    roles: ["SUPER_ADMIN", "ADMIN", "MANAGER"],
+  },
+  {
+    icon: RiGroupLine,
+    label: "Customers",
+    to: "/customers",
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    icon: RiUserLine,
+    label: "Cashiers",
+    to: "/cashiers",
+    roles: ["SUPER_ADMIN", "ADMIN", "MANAGER"],
+  },
+  {
+    icon: RiMoneyDollarBoxLine,
+    label: "Loans",
+    to: "/loans",
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    icon: RiHandCoinLine,
+    label: "Collections",
+    to: "/collections",
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    icon: RiFileListLine,
+    label: "Today's Sheet",
+    to: "/collection-sheet",
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    icon: RiSafeLine,
+    label: "Cash Box",
+    to: "/cash-box",
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    icon: RiCheckboxCircleLine,
+    label: "Approvals",
+    to: "/approvals",
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    icon: RiBarChart2Line,
+    label: "Reports",
+    to: "/reports",
+    roles: ["SUPER_ADMIN", "ADMIN", "MANAGER"],
+  },
+  {
+    icon: RiBellLine,
+    label: "Notifications",
+    to: "/notifications",
+    roles: ["SUPER_ADMIN", "ADMIN", "MANAGER"],
+  },
 ];
 
 function NavItem({ icon: Icon, label, to, onClose }) {
@@ -51,6 +115,9 @@ function NavItem({ icon: Icon, label, to, onClose }) {
 export default function Sidebar({ isOpen, isMobile, onClose }) {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const NAV_ITEMS = ALL_NAV_ITEMS.filter(
+    item => !item.roles || item.roles.includes(user?.role)
+  );
 
   return (
     <Box

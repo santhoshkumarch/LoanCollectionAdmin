@@ -662,22 +662,30 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-function CreateCashierModal({ onClose, onCreate }) {
+function CreateCashierModal({ onClose, onCreate, role }) {
   const [form, setForm] = useState({
     name: "",
     mobile: "",
     email: "",
-    shopName: "",
+    shopId: "",
     password: "",
   });
+  const [shops, setShops] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    apiFetch("/api/shops")
+      .then(data => setShops(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = "Name is required";
     if (!/^\d{10}$/.test(form.mobile))
       e.mobile = "Enter a valid 10-digit mobile number";
+    if (role === "MANAGER" && !form.shopId) e.shopId = "Shop is required";
     if (!form.password || form.password.length < 6)
       e.password = "Password must be at least 6 characters";
     return e;
@@ -696,7 +704,7 @@ function CreateCashierModal({ onClose, onCreate }) {
         name: form.name.trim(),
         mobile: form.mobile.trim(),
         email: form.email.trim() || undefined,
-        shopName: form.shopName.trim() || undefined,
+        shopId: form.shopId || undefined,
         password: form.password,
       });
     } finally {
@@ -833,16 +841,22 @@ function CreateCashierModal({ onClose, onCreate }) {
           </FormField>
 
           <FormField
-            label="Shop Name (optional)"
+            label={`Shop${role === "MANAGER" ? "" : " (optional)"}`}
             icon={RiStoreLine}
-            error={errors.shopName}
+            error={errors.shopId}
           >
-            <input
-              style={inputStyle}
-              placeholder="e.g. Ravi Provision Store"
-              value={form.shopName}
-              onChange={e => setForm(p => ({ ...p, shopName: e.target.value }))}
-            />
+            <select
+              style={{ ...inputStyle, cursor: "pointer" }}
+              value={form.shopId}
+              onChange={e => setForm(p => ({ ...p, shopId: e.target.value }))}
+            >
+              <option value="">— Select a shop —</option>
+              {shops.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
           </FormField>
 
           <FormField
@@ -932,7 +946,7 @@ function CreateCashierModal({ onClose, onCreate }) {
 }
 
 export default function Cashiers() {
-  const { can } = usePermission();
+  const { can, role } = usePermission();
 
   const [cashiers, setCashiers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1021,7 +1035,7 @@ export default function Cashiers() {
           userName: payload.name,
           userMobile: payload.mobile,
           userEmail: payload.email || undefined,
-          shopName: payload.shopName || undefined,
+          shopId: payload.shopId || undefined,
           password: payload.password || undefined,
         }),
       });
@@ -1320,6 +1334,7 @@ export default function Cashiers() {
           <CreateCashierModal
             onClose={() => setShowCreate(false)}
             onCreate={handleCreate}
+            role={role}
           />
         )}
       </AnimatePresence>
